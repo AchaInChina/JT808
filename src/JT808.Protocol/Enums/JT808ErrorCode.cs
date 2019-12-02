@@ -7,11 +7,6 @@
         /// </summary>
         CheckCodeNotEqual = 1001,
         /// <summary>
-        /// 没有标记
-        /// <see cref="JT808.Protocol.Attributes.JT808FormatterAttribute"/>
-        /// </summary>
-        GetFormatterAttributeError = 1002,
-        /// <summary>
         /// 消息头解析错误
         /// </summary>
         HeaderParseError = 1003,
@@ -32,6 +27,10 @@
         /// 没有全局注册格式化器
         /// <see cref="JT808.Protocol.Formatters.IJT808MessagePackFormatter<T>"/>
         /// </summary>
-        NotGlobalRegisterFormatterAssembly = 1008
+        NotGlobalRegisterFormatterAssembly = 1008,        
+        /// <summary>
+        /// 经纬度错误
+        /// </summary>
+        LatOrLngError = 1009
     }
 }

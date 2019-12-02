@@ -1,4 +1,5 @@
-﻿using JT808.Protocol.Formatters;
+﻿using JT808.Protocol.Enums;
+using JT808.Protocol.Formatters;
 using JT808.Protocol.Internal;
 using System;
 using System.Reflection;
@@ -23,8 +24,9 @@ namespace JT808.Protocol.Interfaces
             JT808_0X8103_Custom_Factory = new JT808_0x8103_Custom_Factory();
             JT808_0X8103_Factory = new JT808_0x8103_Factory();
             TerminalPhoneNoLength = 12;
+            Trim = true;
         }
-        public abstract string ConfigId { get; }
+        public abstract string ConfigId { get; protected set; }
         public virtual IJT808MsgSNDistributed MsgSNDistributed { get; set; }
         public virtual IJT808Compress Compress { get; set; }
         public virtual IJT808SplitPackageStrategy SplitPackageStrategy { get; set; }
@@ -37,6 +39,7 @@ namespace JT808.Protocol.Interfaces
         public virtual IJT808_0x8103_Custom_Factory JT808_0X8103_Custom_Factory { get; set; }
         public virtual IJT808_0x8103_Factory JT808_0X8103_Factory { get; set; }
         public virtual int TerminalPhoneNoLength { get; set; }
+        public virtual bool Trim { get; set; }
         public virtual IJT808Config Register(params Assembly[] externalAssemblies)
         {
             if (externalAssemblies != null)
@@ -44,7 +47,9 @@ namespace JT808.Protocol.Interfaces
                 foreach (var easb in externalAssemblies)
                 {
                     FormatterFactory.Register(easb);
+                    JT808_0X0200_Factory.Register(easb);
                     JT808_0X0200_Custom_Factory.Register(easb);
+                    JT808_0X8103_Factory.Register(easb);
                     JT808_0X8103_Custom_Factory.Register(easb);
                 }
             }

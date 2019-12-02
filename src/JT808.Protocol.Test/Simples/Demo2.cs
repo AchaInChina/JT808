@@ -17,7 +17,6 @@ namespace JT808.Protocol.Test.Simples
         public Demo2()
         {
             IJT808Config jT808Config = new DefaultGlobalConfig();
-            jT808Config.Register(Assembly.GetExecutingAssembly());
             JT808Serializer = new JT808Serializer(jT808Config);
         }
 
@@ -35,9 +34,9 @@ namespace JT808.Protocol.Test.Simples
             Assert.Equal(38, jT808Package.Header.MessageBodyProperty.DataLength);
             Assert.Equal(126, jT808Package.Header.MsgNum);
             Assert.Equal("123456789012", jT808Package.Header.TerminalPhoneNo);
-            Assert.False(jT808Package.Header.MessageBodyProperty.IsPackge);
-            Assert.Equal(0, jT808Package.Header.MessageBodyProperty.PackageIndex);
-            Assert.Equal(0, jT808Package.Header.MessageBodyProperty.PackgeCount);
+            Assert.False(jT808Package.Header.MessageBodyProperty.IsPackage);
+            Assert.Equal(0, jT808Package.Header.PackageIndex);
+            Assert.Equal(0, jT808Package.Header.PackgeCount);
             Assert.Equal(JT808EncryptMethod.None, jT808Package.Header.MessageBodyProperty.Encrypt);
 
             //4.数据包体

@@ -1,5 +1,8 @@
-﻿using JT808.Protocol.Attributes;
-using JT808.Protocol.Formatters.MessageBodyFormatters;
+﻿using JT808.Protocol.Enums;
+using JT808.Protocol.Exceptions;
+using JT808.Protocol.Extensions;
+using JT808.Protocol.Formatters;
+using JT808.Protocol.MessagePack;
 using System;
 using System.Collections.Generic;
 
@@ -8,9 +11,9 @@ namespace JT808.Protocol.MessageBody
     /// <summary>
     /// 位置信息汇报
     /// </summary>
-    [JT808Formatter(typeof(JT808_0x0200_Formatter))]
-    public class JT808_0x0200 : JT808Bodies
+    public class JT808_0x0200 : JT808Bodies, IJT808MessagePackFormatter<JT808_0x0200>
     {
+        public override ushort MsgId { get; } = 0x0200;
         /// <summary>
         /// 报警标志 
         /// </summary>
@@ -69,5 +72,136 @@ namespace JT808.Protocol.MessageBody
         /// 依赖平台录入的设备类型
         /// </summary>
         public Dictionary<byte, JT808_0x0200_CustomBodyBase> JT808CustomLocationAttachData { get; set; }
+
+        public JT808_0x0200 Deserialize(ref JT808MessagePackReader reader, IJT808Config config)
+        {
+            JT808_0x0200 jT808_0X0200 = new JT808_0x0200();
+            jT808_0X0200.AlarmFlag = reader.ReadUInt32();
+            jT808_0X0200.StatusFlag = reader.ReadUInt32();
+            if (((jT808_0X0200.StatusFlag >> 28) & 1) == 1)
+            {   //南纬 268435456 0x10000000
+                jT808_0X0200.Lat = (int)reader.ReadUInt32();
+            }
+            else
+            {
+                jT808_0X0200.Lat = reader.ReadInt32();
+            }
+            if (((jT808_0X0200.StatusFlag >> 27) & 1) == 1)
+            {   //西经 ‭134217728‬ 0x8000000
+                jT808_0X0200.Lng = (int)reader.ReadUInt32();
+            }
+            else
+            {
+                jT808_0X0200.Lng = reader.ReadInt32();
+            }
+            jT808_0X0200.Altitude = reader.ReadUInt16();
+            jT808_0X0200.Speed = reader.ReadUInt16();
+            jT808_0X0200.Direction = reader.ReadUInt16();
+            jT808_0X0200.GPSTime = reader.ReadDateTime6();
+            // 位置附加信息
+            jT808_0X0200.JT808LocationAttachData = new Dictionary<byte, JT808_0x0200_BodyBase>();
+            jT808_0X0200.JT808CustomLocationAttachData = new Dictionary<byte, JT808_0x0200_CustomBodyBase>();
+            jT808_0X0200.JT808UnknownLocationAttachOriginalData = new Dictionary<byte, byte[]>();
+            while (reader.ReadCurrentRemainContentLength() > 0)
+            {
+                try
+                {
+                    ReadOnlySpan<byte> attachSpan = reader.GetVirtualReadOnlySpan(2);
+                    byte attachId = attachSpan[0];
+                    byte attachLen = attachSpan[1];
+                    if (config.JT808_0X0200_Factory.Map.TryGetValue(attachId, out object jT808LocationAttachInstance))
+                    {
+                        dynamic attachImpl = JT808MessagePackFormatterResolverExtensions.JT808DynamicDeserialize(jT808LocationAttachInstance, ref reader, config);
+                        jT808_0X0200.JT808LocationAttachData.Add(attachImpl.AttachInfoId, attachImpl);
+                    }
+                    else if (config.JT808_0X0200_Custom_Factory.Map.TryGetValue(attachId,out object customAttachInstance))
+                    {
+                        dynamic attachImpl = JT808MessagePackFormatterResolverExtensions.JT808DynamicDeserialize(customAttachInstance, ref reader, config);
+                        jT808_0X0200.JT808CustomLocationAttachData.Add(attachImpl.AttachInfoId, attachImpl);
+                    }
+                    else
+                    {
+                        reader.Skip(2);
+                        jT808_0X0200.JT808UnknownLocationAttachOriginalData.Add(attachId, reader.ReadArray(reader.ReaderCount - 2, attachLen + 2).ToArray());
+                        reader.Skip(attachLen);
+                    }
+                }
+                catch
+                {
+                    try
+                    {
+                        byte attachId = reader.ReadByte();
+                        byte attachLen = reader.ReadByte();
+                        jT808_0X0200.JT808UnknownLocationAttachOriginalData.Add(attachId, reader.ReadArray(reader.ReaderCount - 2, attachLen + 2).ToArray());
+                        reader.Skip(attachLen);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw;
+                    }
+                }
+            }
+            return jT808_0X0200;
+        }
+
+        public void Serialize(ref JT808MessagePackWriter writer, JT808_0x0200 value, IJT808Config config)
+        {
+            writer.WriteUInt32(value.AlarmFlag);
+            writer.WriteUInt32(value.StatusFlag);
+            //0x10000000 南纬 134217728
+            //0x8000000  西经 ‭‬268435456
+            //0x18000000 南纬-西经 134217728+268435456
+            if (((value.StatusFlag >> 28) & 1) == 1)
+            {
+                uint lat = (uint)value.Lat;
+                writer.WriteUInt32(lat);
+            }
+            else
+            {
+                if (value.Lat < 0)
+                {
+                    throw new JT808Exception(JT808ErrorCode.LatOrLngError, $"Lat {nameof(JT808_0x0200.StatusFlag)} ({value.StatusFlag}>>28) !=1");
+                }
+                writer.WriteInt32(value.Lat);
+            }
+            if (((value.StatusFlag >> 27) & 1) == 1)
+            {
+                uint lng = (uint)value.Lng;
+                writer.WriteUInt32(lng);
+            }
+            else
+            {
+                if (value.Lng < 0)
+                {
+                    throw new JT808Exception(JT808ErrorCode.LatOrLngError, $"Lng {nameof(JT808_0x0200.StatusFlag)} ({value.StatusFlag}>>29) !=1");
+                }
+                writer.WriteInt32(value.Lng);
+            }
+            writer.WriteUInt16(value.Altitude);
+            writer.WriteUInt16(value.Speed);
+            writer.WriteUInt16(value.Direction);
+            writer.WriteDateTime6(value.GPSTime);
+            if (value.JT808LocationAttachData != null && value.JT808LocationAttachData.Count > 0)
+            {
+                foreach (var item in value.JT808LocationAttachData)
+                {
+                    try
+                    {
+                        JT808MessagePackFormatterResolverExtensions.JT808DynamicSerialize(item.Value, ref writer, item.Value, config);
+                    }
+                    catch(Exception ex)
+                    {
+
+                    }
+                }
+            }
+            if (value.JT808CustomLocationAttachData != null && value.JT808CustomLocationAttachData.Count > 0)
+            {
+                foreach (var item in value.JT808CustomLocationAttachData)
+                {
+                    JT808MessagePackFormatterResolverExtensions.JT808DynamicSerialize(item.Value, ref writer, item.Value, config);
+                }
+            }
+        }
     }
 }

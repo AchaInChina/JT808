@@ -1,133 +1,76 @@
 ﻿using JT808.Protocol.Attributes;
 using JT808.Protocol.Enums;
 using JT808.Protocol.Extensions;
+using JT808.Protocol.Formatters;
 using JT808.Protocol.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 
 namespace JT808.Protocol.Internal
 {
     internal class JT808MsgIdFactory: IJT808MsgIdFactory
     {
-        private Dictionary<ushort, Type> map;
-
-        private Dictionary<string, Dictionary<ushort, Type>> customMap;
+        public IDictionary<ushort, object> Map { get; }
 
         internal JT808MsgIdFactory()
         {
-            map = new Dictionary<ushort, Type>();
-            customMap = new Dictionary<string, Dictionary<ushort, Type>>(StringComparer.OrdinalIgnoreCase);
-            InitMap();
+            Map = new Dictionary<ushort, object>();
+            InitMap(Assembly.GetExecutingAssembly());
         }
 
-        private void InitMap()
+        private void InitMap(Assembly assembly)
         {
-            foreach (var item in Enum.GetNames(typeof(JT808MsgId)))
+            var types = assembly.GetTypes().Where(w => w.BaseType == typeof(JT808Bodies)).ToList();
+            foreach (var type in types)
             {
-                JT808MsgId msgId = item.ToEnum<JT808MsgId>();
-                if (!map.ContainsKey((ushort)msgId))
+                var instance = Activator.CreateInstance(type);
+                ushort msgId = 0;
+                try
                 {
-                    JT808BodiesTypeAttribute jT808BodiesTypeAttribute = msgId.GetAttribute<JT808BodiesTypeAttribute>();
-                    if (jT808BodiesTypeAttribute != null)
-                    {                
-                        map.Add((ushort)msgId, jT808BodiesTypeAttribute.JT808BodiesType);
-                    }
+                    msgId = (ushort)type.GetProperty(nameof(JT808Bodies.MsgId)).GetValue(instance);
+                }
+                catch (Exception ex)
+                {
+                    continue;
+                }
+                if (Map.ContainsKey(msgId))
+                {
+                    throw new ArgumentException($"{type.FullName} {msgId} An element with the same key already exists.");
+                }
+                else
+                {
+                    Map.Add(msgId, instance);
                 }
             }
         }
 
-        public Type GetBodiesImplTypeByMsgId(ushort msgId, string terminalPhoneNo)
+        public bool TryGetValue(ushort msgId, out object instance)
         {
-            //判断有无自定义消息Id类型
-            if (customMap.TryGetValue(terminalPhoneNo, out var dict))
-            {
-                if (dict != null)
-                {
-                    return dict.TryGetValue(msgId, out Type bodiesImptType)? bodiesImptType:null;
-                }
-            }
-            return map.TryGetValue(msgId, out Type type) ? type : null;
+            return Map.TryGetValue(msgId, out instance);
         }
 
-        public IJT808MsgIdFactory SetMap<TJT808Bodies>(ushort msgId, string terminalPhoneNo) 
-            where TJT808Bodies : JT808Bodies
+        public IJT808MsgIdFactory SetMap<TJT808Bodies>() where TJT808Bodies : JT808Bodies
         {
-            if (!map.ContainsKey(msgId))
+            Type type = typeof(TJT808Bodies);
+            var instance = Activator.CreateInstance(type);
+            var msgId = (ushort)type.GetProperty(nameof(JT808Bodies.MsgId)).GetValue(instance);
+            if (Map.ContainsKey(msgId))
             {
-                map.Add(msgId, typeof(TJT808Bodies));
-            }
-            return this;
-        }
-
-        public IJT808MsgIdFactory SetMap(ushort msgId, string terminalPhoneNo, Type bodiesImplType)
-        {
-            if (!map.ContainsKey(msgId))
-            {
-                map.Add(msgId, bodiesImplType);
-            }
-            return this;
-        }
-
-        public IJT808MsgIdFactory ReplaceMap<TJT808Bodies>(ushort msgId, string terminalPhoneNo) where TJT808Bodies : JT808Bodies
-        {
-            if (!map.ContainsKey(msgId))
-            {
-                map.Add(msgId, typeof(TJT808Bodies));
+                throw new ArgumentException($"{type.FullName} {msgId} An element with the same key already exists.");
             }
             else
             {
-                map[msgId] = typeof(TJT808Bodies);
+                Map.Add(msgId, instance);
             }
             return this;
         }
 
-        public IJT808MsgIdFactory CustomSetMap<TJT808Bodies>(ushort msgId, string terminalPhoneNo) where TJT808Bodies : JT808Bodies
+        public void Register(Assembly externalAssembly)
         {
-            if (!string.IsNullOrEmpty(terminalPhoneNo))
-            {
-                if (!customMap.TryGetValue(terminalPhoneNo, out var dict))
-                {
-                    if (dict == null)
-                    {
-                        Dictionary<ushort, Type> tmp = new Dictionary<ushort, Type>();
-                        tmp.Add(msgId, typeof(TJT808Bodies));
-                        customMap.Add(terminalPhoneNo, tmp);
-                    }
-                    else
-                    {
-                        if (!dict.ContainsKey(msgId))
-                        {
-                            dict.Add(msgId, typeof(TJT808Bodies));
-                        }
-                    }
-                }
-            }
-            return this;
-        }
-
-        public IJT808MsgIdFactory CustomSetMap(ushort msgId, string terminalPhoneNo, Type bodiesImplType)
-        {
-            if (!string.IsNullOrEmpty(terminalPhoneNo))
-            {
-                if (!customMap.TryGetValue(terminalPhoneNo, out var dict))
-                {
-                    if (dict == null)
-                    {
-                        Dictionary<ushort, Type> tmp = new Dictionary<ushort, Type>();
-                        tmp.Add(msgId, bodiesImplType);
-                        customMap.Add(terminalPhoneNo, tmp);
-                        return this;
-                    }
-                    else
-                    {
-                        if (!dict.ContainsKey(msgId))
-                        {
-                            dict.Add(msgId, bodiesImplType);
-                        }
-                    }
-                }
-            }
-            return this;
+            InitMap(externalAssembly);
         }
     }
 }

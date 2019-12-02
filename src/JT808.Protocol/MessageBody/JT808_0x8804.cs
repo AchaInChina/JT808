@@ -1,15 +1,15 @@
-﻿using JT808.Protocol.Attributes;
-using JT808.Protocol.Enums;
-using JT808.Protocol.Formatters.MessageBodyFormatters;
+﻿using JT808.Protocol.Enums;
+using JT808.Protocol.Formatters;
+using JT808.Protocol.MessagePack;
 
 namespace JT808.Protocol.MessageBody
 {
     /// <summary>
     /// 录音开始命令
     /// </summary>
-    [JT808Formatter(typeof(JT808_0x8804_Formatter))]
-    public class JT808_0x8804 : JT808Bodies
+    public class JT808_0x8804 : JT808Bodies, IJT808MessagePackFormatter<JT808_0x8804>
     {
+        public override ushort MsgId { get; } = 0x8804;
         /// <summary>
         /// 录音命令
         /// 0：停止录音；0x01：开始录音；
@@ -29,5 +29,22 @@ namespace JT808.Protocol.MessageBody
         /// 0：8K；1：11K；2：23K；3：32K；其他保留
         /// </summary>
         public byte AudioSampleRate { get; set; }
+
+        public JT808_0x8804 Deserialize(ref JT808MessagePackReader reader, IJT808Config config)
+        {
+            JT808_0x8804 jT808_0X8804 = new JT808_0x8804();
+            jT808_0X8804.RecordCmd = (JT808RecordCmd)reader.ReadByte();
+            jT808_0X8804.RecordTime = reader.ReadUInt16();
+            jT808_0X8804.RecordSave = (JT808RecordSave)reader.ReadByte();
+            jT808_0X8804.AudioSampleRate = reader.ReadByte();
+            return jT808_0X8804;
+        }
+        public void Serialize(ref JT808MessagePackWriter writer, JT808_0x8804 value, IJT808Config config)
+        {
+            writer.WriteByte((byte)value.RecordCmd);
+            writer.WriteUInt16(value.RecordTime);
+            writer.WriteByte((byte)value.RecordSave);
+            writer.WriteByte(value.AudioSampleRate);
+        }
     }
 }

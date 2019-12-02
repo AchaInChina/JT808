@@ -16,7 +16,7 @@ namespace JT808.Protocol.Test.MessageBody
         public JT808_0x8103Test()
         {
             IJT808Config jT808Config = new DefaultGlobalConfig();
-            jT808Config.Register(Assembly.GetExecutingAssembly());
+            jT808Config.JT808_0X8103_Custom_Factory.SetMap<JT808_0x8103_0x0075>();
             JT808Serializer = new JT808Serializer(jT808Config);
         }
         [Fact]
@@ -132,17 +132,17 @@ namespace JT808.Protocol.Test.MessageBody
                  CustomParamList = new List<JT808_0x8103_CustomBodyBase> {
                     new JT808_0x8103_0x0075() {
                             AudioOutputEnabled=1,
-                               OSD=2,
-                                RTS_EncodeMode=3,
-                                 RTS_KF_Interval=4,
-                                  RTS_Resolution=5,
-                                   RTS_Target_CodeRate=6,
-                                    RTS_Target_FPS=7,
-                                     StreamStore_EncodeMode=8,
-                                      StreamStore_KF_Interval=9,
-                                       StreamStore_Resolution=10,
-                                        StreamStore_Target_CodeRate=11,
-                                         StreamStore_Target_FPS=12
+                            OSD=2,
+                            RTS_EncodeMode=3,
+                            RTS_KF_Interval=4,
+                            RTS_Resolution=5,
+                            RTS_Target_CodeRate=6,
+                            RTS_Target_FPS=7,
+                            StreamStore_EncodeMode=8,
+                            StreamStore_KF_Interval=9,
+                            StreamStore_Resolution=10,
+                            StreamStore_Target_CodeRate=11,
+                            StreamStore_Target_FPS=12
                     }
                 }
             };
@@ -162,5 +162,7 @@ namespace JT808.Protocol.Test.MessageBody
 
             Assert.Equal(customParams, Newtonsoft.Json.JsonConvert.SerializeObject(jT808_0X8103.CustomParamList));
         }
+
+
     }
 }

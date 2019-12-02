@@ -1,14 +1,16 @@
-﻿using JT808.Protocol.Attributes;
-using JT808.Protocol.Formatters.MessageBodyFormatters;
+﻿using JT808.Protocol.Enums;
+using JT808.Protocol.Formatters;
+using JT808.Protocol.Interfaces;
+using JT808.Protocol.MessagePack;
 
 namespace JT808.Protocol.MessageBody
 {
     /// <summary>
     /// 查询终端属性应答
     /// </summary>
-    [JT808Formatter(typeof(JT808_0x0107_Formatter))]
-    public class JT808_0x0107 : JT808Bodies
+    public class JT808_0x0107 : JT808Bodies,IJT808MessagePackFormatter<JT808_0x0107>, IJT808_2019_Version
     {
+        public override ushort MsgId { get; } = 0x0107;
         /// <summary>
         /// 终端类型
         /// bit0，0：不适用客运车辆，1：适用客运车辆；
@@ -21,23 +23,26 @@ namespace JT808.Protocol.MessageBody
         public ushort TerminalType { get; set; }
         /// <summary>
         /// 制造商 ID
-        /// 5 个字节，终端制造商编码
+        /// 2013版本 5 个字节，终端制造商编码
+        /// 2019版本 11 个字节，终端制造商编码
         /// </summary>
         public string MakerId { get; set; }
         /// <summary>
         /// 终端型号
-        /// BYTE[20]
-        /// 20 个字节，此终端型号由制造商自行定义，位数不足时，后补“0X00”。
+        /// BYTE[20] 20 个字节，此终端型号由制造商自行定义，位数不足时，后补“0X00”。
+        /// 2019版本
+        /// BYTE[30] 30 个字节，此终端型号由制造商自行定义，位数不足时，后补“0X00”。
         /// </summary>
         public string TerminalModel { get; set; }
         /// <summary>
         /// 终端ID 
-        /// BYTE[7]
-        /// 7 个字节，由大写字母和数字组成，此终端 ID 由制造商自行定义，位数不足时，后补“0X00”
+        /// BYTE[7]  7 个字节，由大写字母和数字组成，此终端 ID 由制造商自行定义，位数不足时，后补“0X00”
+        /// 2019版本
+        /// BYTE[30]  30 个字节，由大写字母和数字组成，此终端 ID 由制造商自行定义，位数不足时，后补“0X00”
         /// </summary>
         public string TerminalId { get; set; }
         /// <summary>
-        /// 终端 SIM 卡 ICCID 
+        /// 终端 SIM 卡 ICCID
         /// BCD[10]
         /// </summary>
         public string Terminal_SIM_ICCID { get; set; }
@@ -76,5 +81,55 @@ namespace JT808.Protocol.MessageBody
         /// bit7，0：不支持其他通信方式， 1：支持其他通信方式
         /// </summary>
         public byte CommunicationModule { get; set; }
+
+        public JT808_0x0107 Deserialize(ref JT808MessagePackReader reader, IJT808Config config)
+        {
+            JT808_0x0107 jT808_0X0107 = new JT808_0x0107();
+            jT808_0X0107.TerminalType = reader.ReadUInt16();
+            if(reader.Version== JT808Version.JTT2019)
+            {
+                jT808_0X0107.MakerId = reader.ReadString(11);
+                jT808_0X0107.TerminalModel = reader.ReadString(30);
+                jT808_0X0107.TerminalId = reader.ReadString(30);
+            }
+            else
+            {
+                jT808_0X0107.MakerId = reader.ReadString(5);
+                jT808_0X0107.TerminalModel = reader.ReadString(20);
+                jT808_0X0107.TerminalId = reader.ReadString(7);
+            }
+            jT808_0X0107.Terminal_SIM_ICCID = reader.ReadBCD(10, config.Trim);
+            jT808_0X0107.Terminal_Hardware_Version_Length = reader.ReadByte();
+            jT808_0X0107.Terminal_Hardware_Version_Num = reader.ReadString(jT808_0X0107.Terminal_Hardware_Version_Length);
+            jT808_0X0107.Terminal_Firmware_Version_Length = reader.ReadByte();
+            jT808_0X0107.Terminal_Firmware_Version_Num = reader.ReadString(jT808_0X0107.Terminal_Firmware_Version_Length);
+            jT808_0X0107.GNSSModule = reader.ReadByte();
+            jT808_0X0107.CommunicationModule = reader.ReadByte();
+            return jT808_0X0107;
+        }
+
+        public void Serialize(ref JT808MessagePackWriter writer, JT808_0x0107 value, IJT808Config config)
+        {
+            writer.WriteUInt16(value.TerminalType);
+            if (writer.Version == JT808Version.JTT2019)
+            {
+                writer.WriteString(value.MakerId.PadLeft(11, '0'));
+                writer.WriteString(value.TerminalModel.PadLeft(30, '0'));
+                writer.WriteString(value.TerminalId.PadLeft(30, '0'));
+            }
+            else
+            {
+                writer.WriteString(value.MakerId.PadRight(5, '0'));
+                writer.WriteString(value.TerminalModel.PadRight(20, '0'));
+                writer.WriteString(value.TerminalId.PadRight(7, '0'));
+            }
+            writer.WriteBCD(value.Terminal_SIM_ICCID, 10);
+            writer.WriteByte((byte)value.Terminal_Hardware_Version_Num.Length);
+            writer.WriteString(value.Terminal_Hardware_Version_Num);
+            writer.WriteByte((byte)value.Terminal_Firmware_Version_Num.Length);
+            writer.WriteString(value.Terminal_Firmware_Version_Num);
+            writer.WriteByte(value.GNSSModule);
+            writer.WriteByte(value.CommunicationModule);
+        }
     }
 }

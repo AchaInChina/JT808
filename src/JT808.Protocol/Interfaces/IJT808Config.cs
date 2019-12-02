@@ -1,11 +1,12 @@
 ﻿using JT808.Protocol.Enums;
 using JT808.Protocol.Formatters;
+using JT808.Protocol.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
-namespace JT808.Protocol.Interfaces
+namespace JT808.Protocol
 {
     public interface IJT808Config
     {
@@ -57,6 +58,12 @@ namespace JT808.Protocol.Interfaces
         /// 默认：false
         /// </summary>
         bool SkipCRCCode { get; set; }
+        /// <summary>
+        /// ReadBCD是否需要去0操作
+        /// 默认是去0
+        /// 注意:有时候对协议来说是有意义的0
+        /// </summary>
+        bool Trim { get; set; }
         /// <summary>
         /// 设备终端号(默认12位)
         /// </summary>

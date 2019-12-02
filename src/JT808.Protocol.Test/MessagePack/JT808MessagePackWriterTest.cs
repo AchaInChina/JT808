@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit;
 using System.Buffers;
+using JT808.Protocol.Enums;
+using System.Buffers.Binary;
 
 namespace JT808.Protocol.Test.MessagePack
 {
@@ -403,6 +405,17 @@ namespace JT808.Protocol.Test.MessagePack
         }
 
         [Fact]
+        public void WriteASCII()
+        {
+            byte[] array = new byte[4096];
+            byte[] array1 = new byte[] { 0x53,0x56,0x31,0x2E,0x31,0x2E,0x30 };
+            var msgpackWriter = new JT808MessagePackWriter(array);
+            msgpackWriter.WirteASCII("SV1.1.0");
+            var writeRealBytes = msgpackWriter.FlushAndGetRealArray();
+            Assert.Equal(array1, writeRealBytes);
+        }
+
+        [Fact]
         public void CompositeTest1()
         {
             byte[] array = new byte[4096];
@@ -445,6 +458,27 @@ namespace JT808.Protocol.Test.MessagePack
             Assert.Equal("7E 01 7D 02 00 7D 01 01 23 45 67 89 00 00 00 00 00 7E".Replace(" ", ""), encodeBytes);
             var realBytes = msgpackWriter.FlushAndGetRealArray().ToHexString();
             Assert.Equal("7E 01 7E 00 7D 01 23 45 67 89 00 00 00 00 00 7E 7E 01 7D 02 00 7D 01 01 23 45 67 89 00 00 00 00 00 7E".Replace(" ", ""), realBytes);
+        }
+
+        [Fact]
+        public void VersionTest1()
+        {
+            byte[] array = new byte[4096];
+            var msgpackWriter = new JT808MessagePackWriter(array);
+            Assert.Equal(JT808Version.JTT2013, msgpackWriter.Version);
+            msgpackWriter.Version = JT808Version.JTT2019;
+            Assert.Equal(JT808Version.JTT2019, msgpackWriter.Version);
+        }
+
+        [Fact]
+        public void WriteInt16Test1()
+        {
+            byte[] array1 = new byte[2];
+            byte[] array2= new byte[2];
+            BinaryPrimitives.WriteInt16BigEndian(array1, -1233);
+            short a = -1233;
+            BinaryPrimitives.WriteUInt16BigEndian(array2, (ushort)a);
+            Assert.Equal(array1, array2);
         }
     }
 }
