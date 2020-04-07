@@ -1,6 +1,10 @@
-﻿using JT808.Protocol.Formatters;
+﻿using JT808.Protocol.Enums;
+using JT808.Protocol.Extensions;
+using JT808.Protocol.Formatters;
+using JT808.Protocol.Interfaces;
 using JT808.Protocol.MessagePack;
 using System;
+using System.Text.Json;
 
 namespace JT808.Protocol.MessageBody
 {
@@ -8,9 +12,10 @@ namespace JT808.Protocol.MessageBody
     /// 存储多媒体数据上传命令
     /// 0x8803
     /// </summary>
-    public class JT808_0x8803 : JT808Bodies, IJT808MessagePackFormatter<JT808_0x8803>
+    public class JT808_0x8803 : JT808Bodies, IJT808MessagePackFormatter<JT808_0x8803>, IJT808Analyze
     {
         public override ushort MsgId { get; } = 0x8803;
+        public override string Description => "存储多媒体数据上传命令";
         /// <summary>
         /// 多媒体类型 
         /// <see cref="JT808.Protocol.Enums.JT808MultimediaType"/>
@@ -42,6 +47,7 @@ namespace JT808.Protocol.MessageBody
         /// <see cref="JT808.Protocol.Enums.JT808MultimediaDeleted"/>
         /// </summary>
         public byte MultimediaDeleted { get; set; }
+
         public JT808_0x8803 Deserialize(ref JT808MessagePackReader reader, IJT808Config config)
         {
             JT808_0x8803 jT808_0X8803 = new JT808_0x8803();
@@ -62,6 +68,26 @@ namespace JT808.Protocol.MessageBody
             writer.WriteDateTime6(value.StartTime);
             writer.WriteDateTime6(value.EndTime);
             writer.WriteByte(value.MultimediaDeleted);
+        }
+
+        public void Analyze(ref JT808MessagePackReader reader, Utf8JsonWriter writer, IJT808Config config)
+        {
+            JT808_0x8803 value = new JT808_0x8803();
+            value.MultimediaType = reader.ReadByte();
+            value.ChannelId = reader.ReadByte();
+            value.EventItemCoding = reader.ReadByte();
+            value.StartTime = reader.ReadDateTime6();
+            value.EndTime = reader.ReadDateTime6();
+            value.MultimediaDeleted = reader.ReadByte();
+            JT808MultimediaType multimediaType = (JT808MultimediaType)value.MultimediaType;
+            JT808EventItemCoding eventItemCoding = (JT808EventItemCoding)value.EventItemCoding;
+            JT808MultimediaDeleted multimediaDeleted = (JT808MultimediaDeleted)value.MultimediaDeleted;
+            writer.WriteNumber($"[{ value.MultimediaType.ReadNumber()}]多媒体类型-{multimediaType.ToString()}", value.MultimediaType);
+            writer.WriteNumber($"[{ value.ChannelId.ReadNumber()}]通道ID", value.ChannelId);
+            writer.WriteNumber($"[{ value.EventItemCoding.ReadNumber()}]事件项编码-{eventItemCoding.ToString()}", value.EventItemCoding);
+            writer.WriteString($"[{ value.StartTime.ToString("yyMMddHHmmss")}]起始时间", value.StartTime.ToString("yyyy-MM-dd HH:mm:ss"));
+            writer.WriteString($"[{ value.EndTime.ToString("yyMMddHHmmss")}]结束时间", value.EndTime.ToString("yyyy-MM-dd HH:mm:ss"));
+            writer.WriteNumber($"[{ value.MultimediaDeleted.ReadNumber()}]删除标志-{multimediaDeleted.ToString()}", value.MultimediaDeleted);
         }
     }
 }

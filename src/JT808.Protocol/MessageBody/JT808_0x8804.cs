@@ -1,15 +1,19 @@
 ﻿using JT808.Protocol.Enums;
+using JT808.Protocol.Extensions;
 using JT808.Protocol.Formatters;
+using JT808.Protocol.Interfaces;
 using JT808.Protocol.MessagePack;
+using System.Text.Json;
 
 namespace JT808.Protocol.MessageBody
 {
     /// <summary>
     /// 录音开始命令
     /// </summary>
-    public class JT808_0x8804 : JT808Bodies, IJT808MessagePackFormatter<JT808_0x8804>
+    public class JT808_0x8804 : JT808Bodies, IJT808MessagePackFormatter<JT808_0x8804>, IJT808Analyze
     {
         public override ushort MsgId { get; } = 0x8804;
+        public override string Description => "录音开始命令";
         /// <summary>
         /// 录音命令
         /// 0：停止录音；0x01：开始录音；
@@ -45,6 +49,38 @@ namespace JT808.Protocol.MessageBody
             writer.WriteUInt16(value.RecordTime);
             writer.WriteByte((byte)value.RecordSave);
             writer.WriteByte(value.AudioSampleRate);
+        }
+
+        public void Analyze(ref JT808MessagePackReader reader, Utf8JsonWriter writer, IJT808Config config)
+        {
+            JT808_0x8804 value = new JT808_0x8804();
+            value.RecordCmd = (JT808RecordCmd)reader.ReadByte();
+            value.RecordTime = reader.ReadUInt16();
+            value.RecordSave = (JT808RecordSave)reader.ReadByte();
+            value.AudioSampleRate = reader.ReadByte();
+
+            writer.WriteNumber($"[{ ((byte)(value.RecordCmd)).ReadNumber()}]录音命令-{value.RecordCmd.ToString()}", (byte)value.RecordCmd);
+            writer.WriteNumber($"[{value.RecordTime.ReadNumber()}]单位为秒(s)", value.RecordTime);
+            writer.WriteNumber($"[{((byte)value.RecordSave).ReadNumber()}]保存标志-{value.RecordSave.ToString()}", (byte)value.RecordSave);
+            switch (value.AudioSampleRate)
+            {
+                case 0:
+                    writer.WriteNumber($"[{value.AudioSampleRate.ReadNumber()}]音频采样率-8K", value.AudioSampleRate);
+                    break;
+                case 1:
+                    writer.WriteNumber($"[{value.AudioSampleRate.ReadNumber()}]音频采样率-11K", value.AudioSampleRate);
+                    break;
+                case 2:
+                    writer.WriteNumber($"[{value.AudioSampleRate.ReadNumber()}]音频采样率-23K", value.AudioSampleRate);
+                    break;
+                case 3:
+                    writer.WriteNumber($"[{value.AudioSampleRate.ReadNumber()}]音频采样率-32K", value.AudioSampleRate);
+                    break;
+                default:
+                    writer.WriteNumber($"[{value.AudioSampleRate.ReadNumber()}]音频采样率-保留", value.AudioSampleRate);
+                    break;
+            }
+           
         }
     }
 }

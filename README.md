@@ -1,6 +1,6 @@
 ﻿# JT808协议
 
-[![MIT Licence](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/SmallChi/JT808/blob/master/LICENSE)[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FSmallChi%2FJT808.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FSmallChi%2FJT808?ref=badge_shield)[![Build Status](https://travis-ci.org/SmallChi/JT808.svg?branch=master)](https://travis-ci.org/SmallChi/JT808)
+[![MIT Licence](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/SmallChi/JT808/blob/master/LICENSE)![.NET Core](https://github.com/SmallChi/JT808/workflows/.NET%20Core/badge.svg?branch=master)
 
 ## 前提条件
 
@@ -8,9 +8,10 @@
 2. 掌握BCD编码、Hex编码；
 3. 掌握各种位移、异或；
 4. 掌握常用反射；
-5. 掌握快速ctrl+c、ctrl+v；
-6. 掌握Span\<T\>的基本用法
-7. 掌握以上装逼技能，就可以开始搬砖了。
+5. 掌握JObject的用法；
+6. 掌握快速ctrl+c、ctrl+v；
+7. 掌握Span\<T\>的基本用法
+8. 掌握以上装逼技能，就可以开始搬砖了。
 
 ## JT808数据结构解析
 
@@ -59,7 +60,7 @@ JT808Package jT808Package = new JT808Package();
 jT808Package.Header = new JT808Header
 {
     MsgId = Enums.JT808MsgId.位置信息汇报,
-    MsgNum = 126,
+    ManualMsgNum = 126,
     TerminalPhoneNo = "123456789012"
 };
 
@@ -197,8 +198,8 @@ var hex = data.ToHexString();
 
 ``` config
 // 初始化配置
-IJT808Config DT1JT808Config = new DefaultGlobalConfig();
-IJT808Config DT2JT808Config = new DefaultGlobalConfig();
+IJT808Config DT1JT808Config = new DT1Config();
+IJT808Config DT2JT808Config = new DT2Config();
 // 注册自定义消息外部程序集
 DT1JT808Config.Register(Assembly.GetExecutingAssembly());
 // 跳过校验和验证
@@ -222,12 +223,9 @@ JT808Serializer DT2JT808Serializer = new JT808Serializer(DT2JT808Config);
 
 ***解决方式：***
 
-1.凡是解析自定义附加信息Id协议的，先进行分割存储，然后在根据外部的设备类型进行统一处理;
+1.可以根据设备类型做个工厂，解耦对公共序列化器的依赖。
 
-2.可以根据设备类型做个工厂，解耦对公共序列化器的依赖。
-
-**3.(推荐): 可以根据设备类型进行初始化DefaultGlobalConfig，根据不同的DefaultGlobalConfig实例去绑定对应
-协议解析器。**
+2.可以根据设备类型去实现(GlobalConfigBase)对应的配置，根据不同的GlobalConfigBase实例去绑定对应协议解析器。
 
 [可以参考Simples的Demo4](https://github.com/SmallChi/JT808/blob/master/src/JT808.Protocol.Test/Simples/Demo4.cs)
 
@@ -261,10 +259,8 @@ JT808Serializer DT2JT808Serializer = new JT808Serializer(DT2JT808Config);
 
 ***解决方式：***
 
-方式1: 对于设备来说，设备终端号是唯一标识，可以通过使用设备终端号和消息ID去查询对应的序列化器。
-
-**方式2(推荐): 可以根据设备类型进行初始化DefaultGlobalConfig，根据不同的DefaultGlobalConfig实例去绑定对应
-协议解析器。**
+可以根据设备类型去实现(GlobalConfigBase)对应的配置，根据不同的GlobalConfigBase实例去绑定对应
+协议解析器。
 
 [可以参考Simples的Demo6](https://github.com/SmallChi/JT808/blob/master/src/JT808.Protocol.Test/Simples/Demo6.cs)
 
@@ -280,41 +276,54 @@ JT808Serializer DT2JT808Serializer = new JT808Serializer(DT2JT808Config);
 
 [可以参考Simples的Demo7](https://github.com/SmallChi/JT808/blob/master/src/JT808.Protocol.Test/Simples/Demo7.cs)
 
+### 举个栗子8
+
+协议分析器在数据出现异常和纠错的时候也是挺有用的，总不能凭借24K氪金眼去观察数据，那么可以在开发协议的同时就把协议分析器给写好，这样方便技术或者技术支持排查问题，提高效率。
+
+[可以参考Simples的Demo8](https://github.com/SmallChi/JT808/blob/master/src/JT808.Protocol.Test/Simples/Demo8.cs)
+
+### 举个栗子9
+
+增加行车记录仪序列化器，既可以单独的存在，也可以组装在808的数据包当中。
+
+[可以参考Simples的Demo9](https://github.com/SmallChi/JT808/blob/master/src/JT808.Protocol.Test/Simples/Demo9.cs)
+
 ## NuGet安装
 
 | Package Name          | Version                                            | Downloads                                           |
 | --------------------- | -------------------------------------------------- | --------------------------------------------------- |
 | Install-Package JT808 | ![JT808](https://img.shields.io/nuget/v/JT808.svg) | ![JT808](https://img.shields.io/nuget/dt/JT808.svg) |
 | Install-Package JT808.Protocol.Extensions.JT1078 | ![JT808.Protocol.Extensions.JT1078](https://img.shields.io/nuget/v/JT808.Protocol.Extensions.JT1078.svg) | ![JT808](https://img.shields.io/nuget/dt/JT808.Protocol.Extensions.JT1078.svg) |
+| Install-Package JT808.Protocol.Extensions.JTActiveSafety| ![JT808.Protocol.Extensions.JTActiveSafety](https://img.shields.io/nuget/v/JT808.Protocol.Extensions.JTActiveSafety.svg) | ![JT808](https://img.shields.io/nuget/dt/JT808.Protocol.Extensions.JTActiveSafety.svg) |
 
 ## 使用BenchmarkDotNet性能测试报告（只是玩玩，不能当真）
 
 ``` ini
 
-BenchmarkDotNet=v0.12.0, OS=Windows 10.0.18362
+BenchmarkDotNet=v0.12.0, OS=Windows 10.0.18363
 Intel Core i7-8700K CPU 3.70GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical cores
-.NET Core SDK=3.0.100
-  [Host]     : .NET Core 3.0.0 (CoreCLR 4.700.19.46205, CoreFX 4.700.19.46214), X64 RyuJIT
-  Job-ROHSDP : .NET Core 3.0.0 (CoreCLR 4.700.19.46205, CoreFX 4.700.19.46214), X64 RyuJIT
+.NET Core SDK=3.1.102
+  [Host]     : .NET Core 3.1.2 (CoreCLR 4.700.20.6602, CoreFX 4.700.20.6702), X64 RyuJIT
+  Job-LFORNP : .NET Core 3.1.2 (CoreCLR 4.700.20.6602, CoreFX 4.700.20.6702), X64 RyuJIT
 
-Platform=AnyCpu  Server=False  Toolchain=.NET Core 3.0  
+Platform=AnyCpu  Server=False  Toolchain=.NET Core 3.1  
 
 ```
 |                          Method |       Categories |      N |          Mean |        Error |       StdDev |      Gen 0 | Gen 1 | Gen 2 |    Allocated |
 |-------------------------------- |----------------- |------- |--------------:|-------------:|-------------:|-----------:|------:|------:|-------------:|
-|   **0x0200_All_AttachId_Serialize** | **0x0200Serializer** |    **100** |     **259.55 us** |     **4.617 us** |     **4.319 us** |    **31.2500** |     **-** |     **-** |    **192.97 KB** |
-| 0x0200_All_AttachId_Deserialize | 0x0200Serializer |    100 |     821.35 us |    10.732 us |     9.514 us |    79.1016 |     - |     - |     487.5 KB |
-|   **0x0200_All_AttachId_Serialize** | **0x0200Serializer** |  **10000** |  **26,448.35 us** |   **478.895 us** |   **399.899 us** |  **3125.0000** |     **-** |     **-** |  **19296.88 KB** |
-| 0x0200_All_AttachId_Deserialize | 0x0200Serializer |  10000 |  81,776.05 us | 1,405.214 us | 1,245.686 us |  7857.1429 |     - |     - |   48751.2 KB |
-|   **0x0200_All_AttachId_Serialize** | **0x0200Serializer** | **100000** | **261,073.61 us** | **2,592.782 us** | **2,298.434 us** | **31000.0000** |     **-** |     **-** | **192969.15 KB** |
-| 0x0200_All_AttachId_Deserialize | 0x0200Serializer | 100000 | 806,869.44 us | 7,921.093 us | 7,409.395 us | 79000.0000 |     - |     - |    487500 KB |
+|   **0x0200_All_AttachId_Serialize** | **0x0200Serializer** |    **100** |     **269.80 us** |     **3.806 us** |     **3.560 us** |    **31.7383** |     **-** |     **-** |    **196.09 KB** |
+| 0x0200_All_AttachId_Deserialize | 0x0200Serializer |    100 |     797.28 us |     6.821 us |     6.380 us |    80.0781 |     - |     - |    493.75 KB |
+|   **0x0200_All_AttachId_Serialize** | **0x0200Serializer** |  **10000** |  **26,207.51 us** |   **106.233 us** |    **99.370 us** |  **3187.5000** |     **-** |     **-** |  **19609.38 KB** |
+| 0x0200_All_AttachId_Deserialize | 0x0200Serializer |  10000 |  80,987.55 us | 1,035.363 us |   864.575 us |  8000.0000 |     - |     - |     49375 KB |
+|   **0x0200_All_AttachId_Serialize** | **0x0200Serializer** | **100000** | **266,632.33 us** | **4,035.520 us** | **3,577.384 us** | **32000.0000** |     **-** |     **-** | **196094.15 KB** |
+| 0x0200_All_AttachId_Deserialize | 0x0200Serializer | 100000 | 803,980.81 us | 8,884.445 us | 7,875.829 us | 80000.0000 |     - |     - |    493750 KB |
 |                                 |                  |        |               |              |              |            |       |       |              |
-|                 **0x0100Serialize** | **0x0100Serializer** |    **100** |      **76.62 us** |     **0.866 us** |     **0.810 us** |    **10.1318** |     **-** |     **-** |      **62.5 KB** |
-|               0x0100Deserialize | 0x0100Serializer |    100 |      77.80 us |     0.607 us |     0.568 us |    14.6484 |     - |     - |     89.84 KB |
-|                 **0x0100Serialize** | **0x0100Serializer** |  **10000** |   **7,608.31 us** |    **69.958 us** |    **65.439 us** |  **1015.6250** |     **-** |     **-** |      **6250 KB** |
-|               0x0100Deserialize | 0x0100Serializer |  10000 |   7,852.84 us |    54.138 us |    45.208 us |  1460.9375 |     - |     - |   8984.38 KB |
-|                 **0x0100Serialize** | **0x0100Serializer** | **100000** |  **76,993.50 us** |   **544.867 us** |   **509.669 us** | **10142.8571** |     **-** |     **-** |  **62500.28 KB** |
-|               0x0100Deserialize | 0x0100Serializer | 100000 |  78,382.88 us |   791.432 us |   740.306 us | 14571.4286 |     - |     - |     89845 KB |
+|                 **0x0100Serialize** | **0x0100Serializer** |    **100** |      **83.19 us** |     **0.797 us** |     **0.745 us** |    **10.7422** |     **-** |     **-** |     **66.41 KB** |
+|               0x0100Deserialize | 0x0100Serializer |    100 |      76.52 us |     0.443 us |     0.392 us |    15.7471 |     - |     - |     96.88 KB |
+|                 **0x0100Serialize** | **0x0100Serializer** |  **10000** |   **8,473.22 us** |   **104.154 us** |    **86.973 us** |  **1078.1250** |     **-** |     **-** |   **6640.63 KB** |
+|               0x0100Deserialize | 0x0100Serializer |  10000 |   7,706.33 us |    53.613 us |    50.149 us |  1578.1250 |     - |     - |    9687.5 KB |
+|                 **0x0100Serialize** | **0x0100Serializer** | **100000** |  **83,400.05 us** |   **558.714 us** |   **495.286 us** | **10714.2857** |     **-** |     **-** |  **66406.25 KB** |
+|               0x0100Deserialize | 0x0100Serializer | 100000 |  78,158.98 us | 1,112.146 us | 1,040.302 us | 15714.2857 |     - |     - |  96875.28 KB |
 
 ## JT808终端通讯协议消息对照表
 
@@ -362,9 +371,9 @@ Platform=AnyCpu  Server=False  Toolchain=.NET Core 3.0
 | 40    | 0x8605        | √        | √        | 删除多边形区域                 |
 | 41    | 0x8606        | √        | √        | 设置路线                       |修改|
 | 42    | 0x8607        | √        | √        | 删除路线                       |
-| 43    | 0x8700        | x        | 不开发  | 行驶记录仪数据采集命令         |不开发
-| 44    | 0x0700        | x        | 不开发  | 行驶记录仪数据上传             |不开发
-| 45    | 0x8701        | x        | 不开发  | 行驶记录仪参数下传命令         |不开发
+| 43    | 0x8700        | √        | √      | 行驶记录仪数据采集命令         |
+| 44    | 0x0700        | √        | √      | 行驶记录仪数据上传             |
+| 45    | 0x8701        | √        | √      | 行驶记录仪参数下传命令         |
 | 46    | 0x0701        | √        | √        | 电子运单上报                   |
 | 47    | 0x0702        | √        | √        | 驾驶员身份信息采集上报         |修改|
 | 48    | 0x8702        | √        | 消息体为空| 上报驾驶员身份信息请求         |

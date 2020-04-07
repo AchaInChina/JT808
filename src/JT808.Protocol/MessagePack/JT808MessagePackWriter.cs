@@ -177,8 +177,9 @@ namespace JT808.Protocol.MessagePack
             span[0] = Convert.ToByte(value.ToString("HH"), fromBase);
             span[1] = Convert.ToByte(value.ToString("mm"), fromBase);
             span[2] = Convert.ToByte(value.ToString("ss"), fromBase);
-            span[3] = (byte)(value.Millisecond >> 8);
-            span[4] = (byte)(value.Millisecond);
+            var msSpan = value.Millisecond.ToString().PadLeft(4,'0').AsSpan();
+            span[3] = Convert.ToByte(msSpan.Slice(0, 2).ToString(), fromBase);
+            span[4] = Convert.ToByte(msSpan.Slice(2, 2).ToString(), fromBase);
             writer.Advance(5);
         }
         public void WriteUTCDateTime(DateTime value)
@@ -195,17 +196,35 @@ namespace JT808.Protocol.MessagePack
         }
         /// <summary>
         /// YYYYMMDD
+        /// BCD[4]
+        /// 数据形如：20200101
         /// </summary>
         /// <param name="value"></param>
         /// <param name="fromBase"></param>
         public void WriteDateTime4(DateTime value, int fromBase = 16)
         {
             var span = writer.Free;
-            span[0] = (byte)(value.Year >> 8);
-            span[1] = (byte)(value.Year);
+            var yearSpan=value.ToString("yyyy").AsSpan();
+            span[0] = Convert.ToByte(yearSpan.Slice(0, 2).ToString(), fromBase);
+            span[1] = Convert.ToByte(yearSpan.Slice(2, 2).ToString(), fromBase);
             span[2] = Convert.ToByte(value.ToString("MM"), fromBase);
             span[3] = Convert.ToByte(value.ToString("dd"), fromBase);
             writer.Advance(4);
+        }
+        /// <summary>
+        /// YYMMDD
+        /// BCD[4]
+        /// 数据形如：20200101
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="fromBase"></param>
+        public void WriteDateTime3(DateTime value, int fromBase = 16)
+        {
+            var span = writer.Free;
+            span[0] = Convert.ToByte(value.ToString("yy"), fromBase);
+            span[1] = Convert.ToByte(value.ToString("MM"), fromBase);
+            span[2] = Convert.ToByte(value.ToString("dd"), fromBase);
+            writer.Advance(3);
         }
         public void WriteXor(int start, int end)
         {
@@ -305,7 +324,7 @@ namespace JT808.Protocol.MessagePack
             }
             writer.Advance(byteIndex);
         }
-        public void WirteASCII(string value)
+        public void WriteASCII(string value)
         {
             var spanFree = writer.Free;
             var bytes = Encoding.ASCII.GetBytes(value).AsSpan();
@@ -383,6 +402,16 @@ namespace JT808.Protocol.MessagePack
         public int GetCurrentPosition()
         {
             return writer.WrittenCount;
+        }
+        public void  WriteCarDVRCheckCode(int currentPosition)
+        {
+            var carDVRPackage = writer.Written.Slice(currentPosition, writer.WrittenCount- currentPosition);
+            byte calculateXorCheckCode = 0;
+            foreach (var item in carDVRPackage)
+            {
+                calculateXorCheckCode = (byte)(calculateXorCheckCode ^ item);
+            }
+            WriteByte(calculateXorCheckCode);
         }
     }
 }

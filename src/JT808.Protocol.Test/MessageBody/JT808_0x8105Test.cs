@@ -2,6 +2,7 @@
 using JT808.Protocol.MessageBody;
 using System;
 using Xunit;
+using static JT808.Protocol.MessageBody.JT808_0x8105;
 
 namespace JT808.Protocol.Test.MessageBody
 {
@@ -16,7 +17,7 @@ namespace JT808.Protocol.Test.MessageBody
                 Header = new JT808Header
                 {
                     MsgId = Enums.JT808MsgId.终端控制.ToUInt16Value(),
-                    MsgNum = 1,
+                    ManualMsgNum = 1,
                     TerminalPhoneNo = "12345678900",
                 },
                 Bodies = new JT808_0x8105
@@ -31,7 +32,7 @@ namespace JT808.Protocol.Test.MessageBody
                         FirmwareVersion = "1.0",
                         HardwareVersion = "2.0",
                         ConnectTimeLimit = 60,
-                        ManufacturerCode = 12345,
+                        MakerId = "12345",
                         MonitoringPlatformAuthenticationCode = "code",
                         ServerUrl = "www.baidu.com",
                         TCPPort = 8806,
@@ -60,7 +61,7 @@ namespace JT808.Protocol.Test.MessageBody
             Assert.Equal(8806, (int)JT808_0x8105.CommandValue.TCPPort);
             Assert.Equal("www.baidu.com", JT808_0x8105.CommandValue.ServerUrl);
             Assert.Equal("code", JT808_0x8105.CommandValue.MonitoringPlatformAuthenticationCode);
-            Assert.Equal(12345, JT808_0x8105.CommandValue.ManufacturerCode);
+            Assert.Equal("12345", JT808_0x8105.CommandValue.MakerId);
             Assert.Equal("2.0", JT808_0x8105.CommandValue.HardwareVersion);
             Assert.Equal("1.0", JT808_0x8105.CommandValue.FirmwareVersion);
             Assert.Equal("TK", JT808_0x8105.CommandValue.DialUserName);
@@ -70,6 +71,12 @@ namespace JT808.Protocol.Test.MessageBody
             Assert.Equal(60, (UInt16)JT808_0x8105.CommandValue.ConnectTimeLimit);
         }
 
+        [Fact]
+        public void Test1_2()
+        {
+            var bytes = "7E8105004B012345678900000101313B544B4E616D653B544B3B544B3132333B7777772E62616964752E636F6D3B383830363B333330363B31323334353B636F64653B322E303B312E303B7777772E544B2E636F6D3B3630227E".ToHexBytes();
+            string json = JT808Serializer.Analyze<JT808Package>(bytes);
+        }
 
         [Fact]
         public void Test2()
@@ -78,7 +85,7 @@ namespace JT808.Protocol.Test.MessageBody
             jT808Package.Header = new JT808Header
             {
                 MsgId = Enums.JT808MsgId.终端控制.ToUInt16Value(),
-                MsgNum = 1,
+                ManualMsgNum = 1,
                 TerminalPhoneNo = "12345678900",
             };
             jT808Package.Bodies = new JT808_0x8105

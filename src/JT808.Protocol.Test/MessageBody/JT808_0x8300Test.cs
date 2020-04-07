@@ -16,7 +16,7 @@ namespace JT808.Protocol.Test.MessageBody
                 Header = new JT808Header
                 {
                     MsgId = Enums.JT808MsgId.文本信息下发.ToUInt16Value(),
-                    MsgNum = 1,
+                    ManualMsgNum = 1,
                     TerminalPhoneNo = "012345678900",
                 }
             };
@@ -51,7 +51,7 @@ namespace JT808.Protocol.Test.MessageBody
                 {
                     MessageBodyProperty = jT808HeaderMessageBodyProperty,
                     MsgId = Enums.JT808MsgId.文本信息下发.ToUInt16Value(),
-                    MsgNum = 1,
+                    ManualMsgNum = 1,
                     TerminalPhoneNo = "012345678900",
                 }
             };
@@ -75,6 +75,13 @@ namespace JT808.Protocol.Test.MessageBody
             Assert.Equal("smallchi 518", jT808TextSend.TextInfo);
             Assert.Equal(5, jT808TextSend.TextFlag);
             Assert.Equal(1, jT808TextSend.TextType);
+        }
+
+        [Fact]
+        public void Test_2019_3()
+        {
+            byte[] bytes = "7E8300400E010000000001234567890000010501736D616C6C63686920353138417E".ToHexBytes();
+            string json = JT808Serializer.Analyze(bytes);
         }
     }
 }

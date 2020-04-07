@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using Xunit;
 using JT808.Protocol.Formatters;
+using Microsoft.Extensions.DependencyInjection;
 using JT808.Protocol.MessagePack;
 using JT808.Protocol.Attributes;
 using JT808.Protocol.Internal;
@@ -18,16 +19,69 @@ namespace JT808.Protocol.Test.Simples
     {
         public JT808Serializer DT1JT808Serializer;
         public JT808Serializer DT2JT808Serializer;
+
+        public class DT1Config : GlobalConfigBase
+        {
+            public override string ConfigId { get; protected set; } = "DT1";
+        }
+
+        public class DT2Config : GlobalConfigBase
+        {
+            public override string ConfigId { get; protected set; } = "DT2";
+        }
+
         public Demo6()
         {
-            IJT808Config DT1JT808Config = new DefaultGlobalConfig();
-            IJT808Config DT2JT808Config = new DefaultGlobalConfig();
+            IServiceCollection serviceDescriptors = new ServiceCollection();
+            //1
+            serviceDescriptors.AddJT808Configure<DT1Config>()
+                              .AddJT808Configure<DT2Config>();
+            //2
+            //serviceDescriptors.AddJT808Configure(new DT1Config())
+            //                  .AddJT808Configure(new DT2Config());
+            //注册工厂
+            serviceDescriptors.AddSingleton(factory =>
+            {
+                Func<string, IJT808Config> accesor = type =>
+                {
+                    if (type == "DT1")
+                    {
+                        return factory.GetRequiredService<DT1Config>();
+                    }
+                    else if (type == "DT2")
+                    {
+                        return factory.GetRequiredService<DT2Config>();
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Not Support type : {type}");
+                    }
+                };
+                return accesor;
+            });
 
+            IServiceProvider serviceProvider = serviceDescriptors.BuildServiceProvider(); 
+            //使用实例的方式获取
+            IJT808Config DT1JT808Config = serviceProvider.GetRequiredService<DT1Config>();
+            IJT808Config DT2JT808Config = serviceProvider.GetRequiredService<DT2Config>();
+            //这边是因为程序集存在协议冲突的情况，所以不直接采用注册程序集的方式。
             //根据不同的设备终端号，添加自定义消息Id
             DT1JT808Config.MsgIdFactory.SetMap<DT1Demo6>();
             DT2JT808Config.MsgIdFactory.SetMap<DT2Demo6>();
-            DT1JT808Serializer = new JT808Serializer(DT1JT808Config);
-            DT2JT808Serializer = new JT808Serializer(DT2JT808Config);
+
+            Assert.Equal("DT1", DT1JT808Config.ConfigId);
+            Assert.Equal("DT2", DT2JT808Config.ConfigId);
+            DT1JT808Serializer = DT1JT808Config.GetSerializer();
+            DT2JT808Serializer = DT2JT808Config.GetSerializer();
+            Assert.Equal("DT1", DT1JT808Serializer.SerializerId);
+            Assert.Equal("DT2", DT2JT808Serializer.SerializerId);
+
+            //使用工厂的方式获取
+            Func<string, IJT808Config> factory = serviceProvider.GetRequiredService<Func<string, IJT808Config>>();     
+            IJT808Config DT1FactoryJT808Config = factory("DT1");
+            IJT808Config DT2FactoryJT808Config = factory("DT2");
+            Assert.Equal("DT1", DT1FactoryJT808Config.ConfigId);
+            Assert.Equal("DT2", DT2FactoryJT808Config.ConfigId);
         }
 
         /// <summary>
@@ -40,7 +94,7 @@ namespace JT808.Protocol.Test.Simples
             dt1Package.Header = new JT808Header
             {
                 MsgId = 0x91,
-                MsgNum = 126,
+                ManualMsgNum = 126,
                 TerminalPhoneNo = "1234567891"
             };
             DT1Demo6 dT1Demo6 = new DT1Demo6();
@@ -52,7 +106,7 @@ namespace JT808.Protocol.Test.Simples
             dt2Package.Header = new JT808Header
             {
                 MsgId = 0x91,
-                MsgNum = 126,
+                ManualMsgNum = 126,
                 TerminalPhoneNo = "1234567892"
             };
             DT2Demo6 dT2Demo6 = new DT2Demo6();
@@ -94,6 +148,8 @@ namespace JT808.Protocol.Test.Simples
 
         public override ushort MsgId => 0x91;
 
+        public override string Description =>"DT1Demo6";
+
         public DT1Demo6 Deserialize(ref JT808MessagePackReader reader, IJT808Config config)
         {
             DT1Demo6 dT1Demo6 = new DT1Demo6();
@@ -115,6 +171,9 @@ namespace JT808.Protocol.Test.Simples
         public byte Sex2 { get; set; }
 
         public ushort Age2 { get; set; }
+
+        public override string Description => "DT2Demo6";
+
         public DT2Demo6 Deserialize(ref JT808MessagePackReader reader, IJT808Config config)
         {
             DT2Demo6 dT2Demo6 = new DT2Demo6();

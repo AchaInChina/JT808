@@ -1,17 +1,21 @@
 ﻿using JT808.Protocol.Attributes;
 using JT808.Protocol.Enums;
+using JT808.Protocol.Extensions;
 using JT808.Protocol.Formatters;
 using JT808.Protocol.Interfaces;
 using JT808.Protocol.MessagePack;
+using System;
+using System.Text.Json;
 
 namespace JT808.Protocol.MessageBody
 {
     /// <summary>
     /// 文本信息下发
     /// </summary>
-    public class JT808_0x8300 : JT808Bodies, IJT808MessagePackFormatter<JT808_0x8300>, IJT808_2019_Version
+    public class JT808_0x8300 : JT808Bodies, IJT808MessagePackFormatter<JT808_0x8300>, IJT808Analyze, IJT808_2019_Version
     {
         public override ushort MsgId { get; } = 0x8300;
+        public override string Description => "文本信息下发";
         /// <summary>
         /// 文本信息标志位含义见 表 38
         /// </summary>
@@ -48,6 +52,57 @@ namespace JT808.Protocol.MessageBody
                 writer.WriteByte(value.TextType);
             }
             writer.WriteString(value.TextInfo);
+        }
+
+        public void Analyze(ref JT808MessagePackReader reader, Utf8JsonWriter writer, IJT808Config config)
+        {
+            JT808_0x8300 value = new JT808_0x8300();
+            value.TextFlag = reader.ReadByte();
+            writer.WriteNumber($"[{ value.TextFlag.ReadNumber()}]文本信息标志位", value.TextFlag);
+            ReadOnlySpan<char> textFlagBits = Convert.ToString(value.TextFlag, 2).PadLeft(8, '0').AsSpan();
+            if (reader.Version == JT808Version.JTT2019)
+            {
+                writer.WriteStartObject($"文本信息标志对象[{textFlagBits.ToString()}]");
+                writer.WriteString($"[bit6~-bit7]保留", textFlagBits.Slice(6, 2).ToString());
+                writer.WriteString($"[bit5]{textFlagBits[5]}", textFlagBits[5] == '0' ? "中心导航信息" : "CAN故障码信息");
+                writer.WriteString($"[bit4]{textFlagBits[4]}", "-");
+                writer.WriteString($"[bit3]{textFlagBits[3]}", "终端TTS播读");
+                writer.WriteString($"[bit2]{textFlagBits[2]}", "终端显示器显示");
+                var bit0And1= textFlagBits.Slice(0, 2).ToString();
+                switch (bit0And1)
+                {
+                    case "01":
+                        writer.WriteString($"[bit0]{textFlagBits[0]}", "服务");
+                        break;
+                    case "10":
+                        writer.WriteString($"[bit0]{textFlagBits[0]}", "紧急");
+                        break;
+                    case "11":
+                        writer.WriteString($"[bit0]{textFlagBits[0]}", "通知");
+                        break;
+                    case "00":
+                        writer.WriteString($"[bit0]{textFlagBits[0]}", "保留");
+                        break;
+                }
+                writer.WriteEndObject();
+                value.TextType = reader.ReadByte();
+                writer.WriteNumber($"[{ value.TextType.ReadNumber()}]文本类型-{(value.TextType==1? "通知":"服务")}", value.TextType);
+            }
+            else
+            {
+                writer.WriteStartObject($"文本信息标志对象[{textFlagBits.ToString()}]");
+                writer.WriteString($"[bit6~-bit7]保留", textFlagBits.Slice(6, 2).ToString());
+                writer.WriteString($"[bit5]{textFlagBits[5]}", textFlagBits[5] == '0' ? "中心导航信息" : "CAN故障码信息");
+                writer.WriteString($"[bit4]{textFlagBits[4]}", "广告屏显示");
+                writer.WriteString($"[bit3]{textFlagBits[3]}", "终端TTS播读");
+                writer.WriteString($"[bit2]{textFlagBits[2]}", "终端显示器显示");
+                writer.WriteString($"[bit1]{textFlagBits[1]}", "保留");
+                writer.WriteString($"[bit0]{textFlagBits[0]}", "紧急");
+                writer.WriteEndObject();
+            }
+            var txtBuffer = reader.ReadVirtualArray(reader.ReadCurrentRemainContentLength()).ToArray();
+            value.TextInfo = reader.ReadRemainStringContent();
+            writer.WriteString($"[{txtBuffer.ToHexString()}]答案内容", value.TextInfo);
         }
     }
 }

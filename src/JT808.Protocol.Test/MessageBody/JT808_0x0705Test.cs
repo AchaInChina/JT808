@@ -29,13 +29,13 @@ namespace JT808.Protocol.Test.MessageBody
                 CanData = new byte[] { 0x01, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01 },
             });
             var hex = JT808Serializer.Serialize(jT808_0X0705).ToHexString();
-            Assert.Equal("0002200005015E001203040102030401020304050607080103040506070801", hex);
+            Assert.Equal("00022000050350001203040102030401020304050607080103040506070801", hex);
         }
 
         [Fact]
         public void Test2()
         {
-            byte[] bytes = "0002200005015E001203040102030401020304050607080103040506070801".ToHexBytes();
+            byte[] bytes = "00022000050350001203040102030401020304050607080103040506070801".ToHexBytes();
             JT808_0x0705 jT808_0X0705 = JT808Serializer.Deserialize<JT808_0x0705>(bytes);
 
             Assert.Equal(2, jT808_0X0705.CanItemCount);
@@ -47,6 +47,13 @@ namespace JT808.Protocol.Test.MessageBody
 
             Assert.Equal(0x05060708u , jT808_0X0705.CanItems[1].CanId);
             Assert.Equal(new byte[] { 0x01, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01 }, jT808_0X0705.CanItems[1].CanData);
+        }
+
+        [Fact]
+        public void Test3()
+        {
+            byte[] bytes = "00022000050350001203040102030401020304050607080103040506070801".ToHexBytes();
+            string json = JT808Serializer.Analyze<JT808_0x0705>(bytes);
         }
     }
 }

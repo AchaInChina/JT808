@@ -65,7 +65,7 @@ namespace JT808.Protocol.Test.MessageBody
                 jT808Package.Header = new JT808Header
                 {
                     MsgId = Enums.JT808MsgId.位置信息汇报.ToUInt16Value(),
-                    MsgNum = (ushort)i,
+                    ManualMsgNum = (ushort)i,
                     TerminalPhoneNo = "1122334455"+i.ToString(),
                 };
                 JT808_0x0200 jT808UploadLocationRequest = new JT808_0x0200
@@ -136,6 +136,13 @@ namespace JT808.Protocol.Test.MessageBody
             Assert.Equal((uint)2, jT808UploadLocationRequest.StatusFlag);
             Assert.Equal(100, ((JT808_0x0200_0x01)jT808UploadLocationRequest.JT808LocationAttachData[JT808Constants.JT808_0x0200_0x01]).Mileage);
             Assert.Equal(55, ((JT808_0x0200_0x02)jT808UploadLocationRequest.JT808LocationAttachData[JT808Constants.JT808_0x0200_0x02]).Oil);
+        }
+
+        [Fact]
+        public void Test2_1()
+        {
+            byte[] bodys = "00 00 00 01 00 00 00 02 00 BA 7F 0E 07 E4 F1 1C 00 28 00 3C 00 00 18 07 15 10 10 10 01 04 00 00 00 64 02 02 00 37".ToHexBytes();
+            string json = JT808Serializer.Analyze<JT808_0x0200>(bodys);
         }
 
         [Fact]
@@ -244,7 +251,12 @@ namespace JT808.Protocol.Test.MessageBody
             jT808Package.Bodies = jT808UploadLocationRequest;
             var hex = JT808Serializer.Serialize(jT808Package).ToHexString();
         }
-
+        [Fact]
+        public void Test5_2()
+        {
+            byte[] bytes = "7E 02 00 00 26 11 22 33 44 55 66 22 B8 00 00 00 01 00 00 00 02 00 BA 7F 0E 07 E4 F1 1C 00 28 00 3C 00 00 18 07 15 10 10 10 01 04 00 00 00 64 02 02 00 37 57 7E".ToHexBytes();
+            string json = JT808Serializer.Analyze(bytes);
+        }
         [Fact]
         public void Test5()
         {
@@ -292,6 +304,38 @@ namespace JT808.Protocol.Test.MessageBody
             Assert.Equal(100, ((JT808_0x0200_0x01)jT808UploadLocationRequest.JT808LocationAttachData[JT808Constants.JT808_0x0200_0x01]).Mileage);
             Assert.Equal(55, ((JT808_0x0200_0x02)jT808UploadLocationRequest.JT808LocationAttachData[JT808Constants.JT808_0x0200_0x02]).Oil);
         }
+        [Fact]
+        public void Test6()
+        {
+            JT808_0x0200 jT808UploadLocationRequest = new JT808_0x0200
+            {
+                AlarmFlag = 300000,
+                Altitude = 40,
+                GPSTime = DateTime.Parse("2018-07-15 10:10:10"),
+                Lat = 12222222,
+                Lng = 132444444,
+                Speed = 60,
+                Direction = 0,
+                StatusFlag = 1002222,
+                JT808LocationAttachData = new Dictionary<byte, JT808_0x0200_BodyBase>()
+            };
+            jT808UploadLocationRequest.JT808LocationAttachData.Add(JT808Constants.JT808_0x0200_0x01, new JT808_0x0200_0x01
+            {
+                Mileage = 100
+            });
+            jT808UploadLocationRequest.JT808LocationAttachData.Add(JT808Constants.JT808_0x0200_0x02, new JT808_0x0200_0x02
+            {
+                Oil = 55
+            });
+            var hex = JT808Serializer.Serialize(jT808UploadLocationRequest).ToHexString();
+            Assert.Equal("000493E0000F4AEE00BA7F0E07E4F11C0028003C000018071510101001040000006402020037", hex);
+        }
+        [Fact]
+        public void Test6_1()
+        {
+            byte[] bodys = "000493E0000F4AEE00BA7F0E07E4F11C0028003C000018071510101001040000006402020037".ToHexBytes();
+            string json = JT808Serializer.Analyze<JT808_0x0200>(bodys);
+        }
 
         [Fact]
         public void Test_all_attcahids()
@@ -300,7 +344,7 @@ namespace JT808.Protocol.Test.MessageBody
             jT808Package.Header = new JT808Header
             {
                 MsgId = Enums.JT808MsgId.位置信息汇报.ToUInt16Value(),
-                MsgNum = 8888,
+                ManualMsgNum = 8888,
                 TerminalPhoneNo = "112233445566",
             };
             JT808_0x0200 jT808UploadLocationRequest = new JT808_0x0200();

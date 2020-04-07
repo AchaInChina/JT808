@@ -49,6 +49,26 @@ namespace JT808.Protocol
         /// </summary>
         IJT808_0x8103_Factory JT808_0X8103_Factory { get; set; }
         /// <summary>
+        ///数据上行透传工厂
+        /// </summary>
+        IJT808_0x0900_Custom_Factory JT808_0x0900_Custom_Factory { get; set; }
+        /// <summary>
+        ///数据下行透传工厂
+        /// </summary>
+        IJT808_0x8900_Custom_Factory JT808_0x8900_Custom_Factory { get; set; }
+        /// <summary>
+        /// 控制类型工厂
+        /// </summary>
+        IJT808_0x8500_2019_Factory JT808_0x8500_2019_Factory { get; set; }
+        /// <summary>
+        /// 记录仪上行命令字工厂
+        /// </summary>
+        IJT808_CarDVR_Up_Factory JT808_CarDVR_Up_Factory { get; set; }
+        /// <summary>
+        /// 记录仪下行命令字工厂
+        /// </summary>
+        IJT808_CarDVR_Down_Factory JT808_CarDVR_Down_Factory { get; set; }
+        /// <summary>
         /// 统一编码
         /// </summary>
         Encoding Encoding { get; set; }
@@ -58,6 +78,12 @@ namespace JT808.Protocol
         /// 默认：false
         /// </summary>
         bool SkipCRCCode { get; set; }
+        /// <summary>
+        /// 跳过行车记录仪校验码
+        /// 测试的时候需要手动修改值，避免验证
+        /// 默认：false
+        /// </summary>
+        bool SkipCarDVRCRCCode { get; set; }
         /// <summary>
         /// ReadBCD是否需要去0操作
         /// 默认是去0

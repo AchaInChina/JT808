@@ -28,6 +28,13 @@ namespace JT808.Protocol.Test.MessageBody
         }
 
         [Fact]
+        public void Test5()
+        {
+            byte[] bodys = "34 35 36 31 32".ToHexBytes();
+            string json = JT808Serializer.Analyze<JT808_0x0102>(bodys);
+        }
+
+        [Fact]
         public void Test2019_1()
         {
             JT808_0x0102 jT808LoginRequestProperty = new JT808_0x0102
@@ -52,6 +59,13 @@ namespace JT808.Protocol.Test.MessageBody
         }
 
         [Fact]
+        public void Test2019_3()
+        {
+            byte[] bodys = "05343536313231323334353637383930616263646576322E302E303030303030303030303030303030".ToHexBytes();
+            string json = JT808Serializer.Analyze<JT808_0x0102>(bodys, JT808Version.JTT2019);
+        }
+
+        [Fact]
         public void Test3()
         {
             JT808Package jT808LoginRequest = new JT808Package
@@ -59,7 +73,7 @@ namespace JT808.Protocol.Test.MessageBody
                 Header = new JT808Header
                 {
                     MsgId = Enums.JT808MsgId.终端鉴权.ToUInt16Value(),
-                    MsgNum = 12345,
+                    ManualMsgNum = 12345,
                     TerminalPhoneNo = "12345678900",
                 },
                 Bodies = new JT808_0x0102

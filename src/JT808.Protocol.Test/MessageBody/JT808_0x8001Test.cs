@@ -15,7 +15,7 @@ namespace JT808.Protocol.Test.MessageBody
                 Header = new JT808Header
                 {
                     MsgId = Enums.JT808MsgId.平台通用应答.ToUInt16Value(),
-                    MsgNum = 10,
+                    ManualMsgNum = 10,
                     TerminalPhoneNo = "12345678900",
                 },
                 Bodies = new JT808_0x8001
@@ -52,6 +52,13 @@ namespace JT808.Protocol.Test.MessageBody
             Assert.Equal(Enums.JT808MsgId.位置信息汇报.ToUInt16Value(), JT808Bodies.AckMsgId);
             Assert.Equal(100, JT808Bodies.MsgNum);
             Assert.Equal(Enums.JT808PlatformResult.成功, JT808Bodies.JT808PlatformResult);
+        }
+
+        [Fact]
+        public void Test3()
+        {
+            var bytes = "7E 80 01 00 05 01 23 45 67 89 00 00 0A 00 64 02 00 00 61 7E".ToHexBytes();
+            string json = JT808Serializer.Analyze<JT808Package>(bytes);
         }
     }
 }

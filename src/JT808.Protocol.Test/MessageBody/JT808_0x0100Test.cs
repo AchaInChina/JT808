@@ -17,7 +17,7 @@ namespace JT808.Protocol.Test.MessageBody
                 Header = new JT808Header
                 {
                     MsgId = Enums.JT808MsgId.终端注册.ToUInt16Value(),
-                    MsgNum = 10,
+                    ManualMsgNum = 10,
                     TerminalPhoneNo = "123456789",
                 },
                 Bodies = new JT808_0x0100
@@ -62,7 +62,7 @@ namespace JT808.Protocol.Test.MessageBody
                 Header = new JT808Header
                 {
                     MsgId = Enums.JT808MsgId.终端注册.ToUInt16Value(),
-                    MsgNum = 10,
+                    ManualMsgNum = 10,
                     TerminalPhoneNo = "123456789",
                     ProtocolVersion=1,
                 },
@@ -103,6 +103,13 @@ namespace JT808.Protocol.Test.MessageBody
             Assert.Equal("粤A12345", JT808Bodies.PlateNo);
             Assert.Equal("CHI123".PadLeft(30, '0'), JT808Bodies.TerminalId);
             Assert.Equal("smallchi123".PadLeft(30, '0'), JT808Bodies.TerminalModel);
+        }
+
+        [Fact]
+        public void Test2019_3()
+        {
+            byte[] bytes = "7E010040540100000000000123456789000A00280032303030303030303132333430303030303030303030303030303030303030736D616C6C63686931323330303030303030303030303030303030303030303030303043484931323301D4C1413132333435B27E".ToHexBytes();
+            string json = JT808Serializer.Analyze<JT808Package>(bytes);
         }
     }
 }
